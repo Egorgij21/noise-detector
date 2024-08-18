@@ -1,2 +1,4 @@
 __pycache__
-data/*
+data/*.txt
+data/*.wav
+data/wavs
