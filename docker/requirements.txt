@@ -1,0 +1,5 @@
+numpy
+jiwer
+silero_vad
+Cython
+packaging
