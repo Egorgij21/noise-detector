@@ -3,3 +3,4 @@ jiwer
 silero_vad
 Cython
 packaging
+langdetect

@@ -2,11 +2,9 @@ version: "3.3"
 services:
   noisecheck:
     build:
+      context: ..
       dockerfile: ./docker/Dockerfile
     environment:
       - device=cpu
-      - HOST=0.0.0.0
-      - PORT=5022
     ports:
       - 5022:5022
-    command: "python3.10 run.py"

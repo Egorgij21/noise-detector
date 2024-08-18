@@ -1,10 +1,9 @@
 import os
 import re
+import string
 import numpy as np
-from jiwer import cer
+from glob import glob
 import matplotlib.pyplot as plt
-
-from silero_vad import get_speech_timestamps
 
 import nemo.collections.asr as nemo_asr
 
@@ -23,26 +22,16 @@ def read_metadata(path: str) -> dict[str, str]:
     return data
 
 
-def load_nemo_asr():
-    asr_model = nemo_asr.models.EncDecRNNTBPEModel.from_pretrained(model_name="stt_en_conformer_transducer_large")
+def load_nemo_asr(lang: str = "en"):
+    asr_model = nemo_asr.models.EncDecRNNTBPEModel.from_pretrained(model_name=f"stt_{lang}_conformer_transducer_small")
     asr_model.to(DEVICE)
     asr_model.eval()
     return asr_model
 
 
-def check_annotation(asr_model, path_to_audio: str, target_text: str, cer_th: float = 0.1) -> bool:
-    pred_text = asr_model.transcribe(paths2audio_files=[path_to_audio])[0]
-    pred_cer = cer(pred_text, target_text)
-    if pred_cer > cer_th:
-        return False
-    return True
-
-
-def check_speech(vad_model, signal: np.ndarray):
-    timestamps = get_speech_timestamps(signal, vad_model)
-    if len(timestamps):
-        return True
-    return False
+def remove_punctuation(text: str) -> str:
+    translator = str.maketrans('', '', string.punctuation + '“”‘’\'"')
+    return text.translate(translator)
 
 
 def calculate_fft(signal, sampling_rate):

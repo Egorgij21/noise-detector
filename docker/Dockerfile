@@ -15,17 +15,22 @@ RUN apt update -y \
     && apt-get install vim -y \
     && apt-get install ffmpeg -y
 
+RUN mkdir -p /workdir
+
 RUN pip install --upgrade pip
-RUN python3 -m pip install --upgrade setuptools
+RUN python3.10 -m pip install --upgrade setuptools
+
 RUN pip install --no-cache-dir  --force-reinstall -Iv grpcio==1.54.2
 COPY ./docker/requirements.txt /
-RUN python3 -m pip install -r requirements.txt
-RUN python3 -m pip install nemo_toolkit['asr']
+RUN python3.10 -m pip install -r /requirements.txt
+RUN python3.10 -m pip install nemo_toolkit['asr']
+RUN python3.10 -m pip install huggingface_hub==0.23.2
+RUN git clone https://github.com/deepvk/NISQA-s /workdir/NISQA-s/
+RUN python3.10 -m pip install -r /workdir/NISQA-s/requirements.txt
 
-RUN mkdir -p /workdir
-RUN mkdir -p /workdir/data
-COPY ../ /workdir/
-
+COPY ./ /workdir/
 WORKDIR /workdir/
 
 ENV LANG C.UTF-8
+
+CMD ["mv", "/workdir/NISQA-s/src/utils", "/workdir/NISQA-s/src/nisqa_utils", "&&", "python3.10", "bugfix_script.py", "NISQA-s/src/nisqa_utils/process_utils.py"]
