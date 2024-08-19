@@ -25,13 +25,13 @@
 ├── docker/                       # Directory with docker files and requirements
 │   ├── Dockerfile
 │   ├── docker-compose.yml
-│   └── requirements.txt
+│   ├── requirements.txt
+│   └──bugfix_script.py           # Script that fixes a bug in the NISQA-s source code
 ├── src/                          # Source code directory
 │   ├── detector.py               # Script containing the noise detection and analysis logic
 │   ├── denoiser.py               # Script containing the audio denoising logic
 │   ├── utils.py                  # Utility functions (not provided in this example)
 │   └── voice_utils.py            # Utility functions for voice analysis (not provided in this example)
-├── bugfix_script.py              # Script that fixes a bug in the NISQA-s source code
 ├── run.py                        # Main script to run the analysis and denoising process
 └── README.md                     # Project documentation
 ```
@@ -45,7 +45,7 @@ cd docker
 docker compose -p noise-reducer -f docker-compose.yml build
 docker run -dt --name noisecheck  noise-reducer-noisecheck
 docker exec -it noisecheck bash
-mv /workdir/NISQA-s/src/utils ./NISQA-s/src/nisqa_utils && python3.10 bugfix_script.py /workdir/NISQA-s/src/nisqa_utils/process_utils.py
+mv /workdir/NISQA-s/src/utils ./NISQA-s/src/nisqa_utils && python3.10 docker/bugfix_script.py /workdir/NISQA-s/src/nisqa_utils/process_utils.py
 ```
 
 ### Run Processing
