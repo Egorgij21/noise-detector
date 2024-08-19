@@ -64,7 +64,7 @@ class NoiseReducer:
         if signal.max() <= 1.1:
             signal = (signal * 32767).astype(np.int16)
 
-        return sr, signal
+        return sr, signal.astype(np.int16)
     
     def write_audio(self, signal: np.ndarray, sr: int, save_path: str, target_sr: int = 16000) -> None:
         if sr != target_sr:
@@ -122,11 +122,11 @@ class NoiseReducer:
             if is_denoisable and self.do_vocals_denoising:
                 self.write_audio(signal, sr, new_audio_path, target_sr=16000)
                 new_audio_path_ = self.vocals_model.separate(new_audio_path)[0]
-                shutil.move(new_audio_path_, new_audio_path)
-                sr, signal = self.read_audio(new_audio_path, target_sr=16000)
+                sr, signal = self.read_audio(new_audio_path_, target_sr=16000)
+                subprocess.call(["rm", f"/workdir/{new_audio_path_}"])
 
             if is_changeable:
-                signal = torch.Tensor((signal / 32767).astype(float))
+                signal = (signal / 32767).astype(float)
                 if "SOFT_SPEECH" in audio_tags:
                     signal = self.make_louder(signal, 2)
                 if "LOUD_SPEECH" in audio_tags:

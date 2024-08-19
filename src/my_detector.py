@@ -95,7 +95,7 @@ class NoiseDetector:
         if signal.max() <= 1.1:
             signal = (signal * 32767).astype(np.int16)
 
-        return sr, signal
+        return sr, signal.astype(np.int16)
     
     def calculate_nisqa(self, signal: np.ndarray, sr: int) -> np.ndarray[float]:
         framesize = sr * 2
