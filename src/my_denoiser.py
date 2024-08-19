@@ -2,6 +2,7 @@ import os
 import torch
 import scipy
 import shutil
+import subprocess
 import numpy as np
 import pandas as pd
 from glob import glob
@@ -120,7 +121,9 @@ class NoiseReducer:
 
             if is_denoisable and self.do_vocals_denoising:
                 self.write_audio(signal, sr, new_audio_path, target_sr=16000)
-                self.vocals_model.separate(new_audio_path)
+                new_audio_path_ = self.vocals_model.separate(new_audio_path)[0]
+                shutil.move(new_audio_path_, new_audio_path)
+                subprocess.call(["rm", new_audio_path_])
                 sr, signal = self.read_audio(new_audio_path, target_sr=16000)
 
             if is_changeable:
