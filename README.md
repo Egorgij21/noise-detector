@@ -3,7 +3,7 @@
 ## Table of Contents
 1. [Project Structure](#project-structure)
 2. [How to Use](#how-to-use)
-    - [Docker Building and Executing](#docker-building)
+    - [Docker Building and Executing](#docker-building-and-executing)
     - [Run Processing](#run-processing)
     - [Command Line Arguments](#command-line-arguments)
 3. [Analysis and Enhancement Methods](#analysis-and-enhancement-methods)
