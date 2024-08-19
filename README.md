@@ -36,7 +36,7 @@
 ```
 
 ## How to Use
-First upload your data to the repository, for convenience you can use the data/ directory.
+First upload your data to the working repository folder, for convenience you can use the data/ directory.
 To avoid dependency issues, it is suggested to raise the solution in docker, but you can also use the functions in your local environment.
 ### Docker Building and Executing
 ```
