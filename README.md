@@ -31,6 +31,7 @@
 │   ├── denoiser.py               # Script containing the audio denoising logic
 │   ├── utils.py                  # Utility functions (not provided in this example)
 │   └── voice_utils.py            # Utility functions for voice analysis (not provided in this example)
+├── bugfix_script.py              # Script that fixes a bug in the NISQA-s source code
 ├── run.py                        # Main script to run the analysis and denoising process
 └── README.md                     # Project documentation
 ```
