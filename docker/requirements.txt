@@ -4,3 +4,4 @@ silero_vad
 Cython
 packaging
 langdetect
+denoiser

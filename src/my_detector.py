@@ -14,9 +14,10 @@ from jiwer import cer
 
 from langdetect import detect as lang_detector
 from core.model_torch import model_init as nisqa_init
-from nisqa_utils.process_utils import process as nisqa_process
 from silero_vad import load_silero_vad, get_speech_timestamps
+from nisqa_utils.process_utils import process as nisqa_process
 from utils import read_metadata, load_nemo_asr, remove_punctuation
+from voice_utils import is_soft_speech, is_loud_speech, is_whisper
 
 
 class NoiseDetector:
@@ -29,6 +30,7 @@ class NoiseDetector:
         do_check_annotations: bool,
         do_lang_check: bool,
         do_nisqa_check: bool,
+        do_voice_check: bool,
         lang: str = "en"
     ) -> None:
         assert result_filepath.endswith(".txt"), "Specify the path to the recording file in .txt format."
@@ -40,6 +42,7 @@ class NoiseDetector:
         self.do_check_annotations = do_check_annotations
         self.do_lang_check = do_lang_check
         self.do_nisqa_check = do_nisqa_check
+        self.do_voice_check = do_voice_check
         self.lang = lang
         self.return_txt_file = ""
 
@@ -72,7 +75,12 @@ class NoiseDetector:
                                        "NISQA_NOISE",
                                        "BAD_COLORATION",
                                        "DISCONTINUITY",
-                                       "BAD_LOUDNESS"])
+                                       "NISQA_BAD_LOUDNESS"])
+
+        if do_voice_check:
+            self.POSSIBLE_TAGS.extend(["SOFT_SPEECH",
+                                       "LOUD_SPEECH",
+                                       "WHISPER_SPEECH"])
 
     def read_audio(self, audio_path: str, target_sr: int = 16000) -> np.ndarray:
         sr, signal = scipy.io.wavfile.read(audio_path, mmap=False)
@@ -141,7 +149,7 @@ class NoiseDetector:
             line_tags = line.split("|")[-1].split(" ")
             line_id = line.split("|")[0]
             id_index = dataframe["file_id"].index(line_id)
-            
+
             if line_tags[0] == "OK":
                 dataframe["OK"][id_index] = True
             else:
@@ -189,6 +197,15 @@ class NoiseDetector:
                     TAGS.append("DISCONTINUITY")
                 if loundness < loundness_th:
                     TAGS.append("BAD_LOUDNESS")
+
+            if self.do_voice_check:
+                float_signal = (signal / 32767).astype(float)
+                if is_soft_speech(float_signal, sr):
+                    TAGS.append("SOFT_SPEECH")
+                if is_loud_speech(float_signal, sr):
+                    TAGS.append("LOUD_SPEECH")
+                if is_whisper(float_signal, sr):
+                    TAGS.append("WHISPER_SPEECH")
 
             if len(TAGS) == 0:
                 TAGS.append("OK")
