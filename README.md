@@ -26,7 +26,7 @@
 │   ├── Dockerfile
 │   ├── docker-compose.yml
 │   ├── requirements.txt
-│   └── bugfix_script.py           # Script that fixes a bug in the NISQA-s source code
+│   └── bugfix_script.py          # Script that fixes a bug in the NISQA-s source code
 ├── src/                          # Source code directory
 │   ├── detector.py               # Script containing the noise detection and analysis logic
 │   ├── denoiser.py               # Script containing the audio denoising logic
