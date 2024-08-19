@@ -61,7 +61,7 @@ class NoiseReducer:
         if len(signal.shape) > 1:
             signal = (signal[:,0] + signal[:,1]) / 2
 
-        if signal.max() <= 1.001:
+        if signal.max() <= 1.1:
             signal = (signal * 32767).astype(np.int16)
 
         return sr, signal
@@ -71,7 +71,7 @@ class NoiseReducer:
             number_of_samples = round(len(signal) * float(target_sr) / sr)
             signal = scipy.signal.resample(signal, number_of_samples)
 
-        if signal.max() <= 1.001:
+        if signal.max() <= 1.1:
             signal = (signal * 32767).astype(np.int16)
 
         scipy.io.wavfile.write(save_path, target_sr, signal)

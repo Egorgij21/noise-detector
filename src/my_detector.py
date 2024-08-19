@@ -92,7 +92,7 @@ class NoiseDetector:
         if len(signal.shape) > 1:
             signal = (signal[:,0] + signal[:,1]) / 2
 
-        if signal.max() <= 1.001:
+        if signal.max() <= 1.1:
             signal = (signal * 32767).astype(np.int16)
 
         return sr, signal
