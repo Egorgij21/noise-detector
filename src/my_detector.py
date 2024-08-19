@@ -21,6 +21,28 @@ from voice_utils import is_soft_speech, is_loud_speech, is_whisper
 
 
 class NoiseDetector:
+    """
+    A class to detect noise, speech, language issues, and other quality aspects of audio files.
+
+    Attributes:
+        meta (dict): Metadata containing target annotations for audio files.
+        wavs_path (str): Path to the directory containing WAV files.
+        result_filepath (str): Path to save the results of the noise detection.
+        do_check_speech (bool): Flag to indicate if speech presence should be checked.
+        do_check_annotations (bool): Flag to indicate if annotations should be checked for correctness.
+        do_lang_check (bool): Flag to indicate if language detection should be performed.
+        do_nisqa_check (bool): Flag to indicate if NISQA (speech quality assessment) should be performed.
+        do_voice_check (bool): Flag to indicate if voice characteristics (e.g., soft speech, loud speech) should be checked.
+        lang (str): Expected language of the speech in the audio files.
+        return_txt_file (str): String to store the results before saving to file.
+        vad (silero_vad): VAD (Voice Activity Detector) model for checking speech presence.
+        asr (ASRModel): ASR (Automatic Speech Recognition) model for annotation checking.
+        POSSIBLE_TAGS (list): List of possible tags that can be assigned to audio files during processing.
+        nisqa_args (dict): Configuration parameters for the NISQA model.
+        nisqa_model (torch.nn.Module): The loaded NISQA model.
+        h0, c0 (torch.Tensor): Initial hidden and cell states for the NISQA model's RNN.
+    """
+
     def __init__(
         self,
         metadata_path: str,
@@ -33,6 +55,21 @@ class NoiseDetector:
         do_voice_check: bool,
         lang: str = "en"
     ) -> None:
+        """
+        Initializes the NoiseDetector with specified configurations and loads necessary models.
+
+        Args:
+            metadata_path (str): Path to the metadata file containing annotations.
+            wavs_path (str): Path to the directory containing WAV files.
+            result_filepath (str): Path to save the results of the noise detection.
+            do_check_speech (bool): Flag to enable or disable speech presence checking.
+            do_check_annotations (bool): Flag to enable or disable annotation correctness checking.
+            do_lang_check (bool): Flag to enable or disable language detection.
+            do_nisqa_check (bool): Flag to enable or disable NISQA (speech quality assessment).
+            do_voice_check (bool): Flag to enable or disable voice characteristics checking.
+            lang (str, optional): Expected language of the speech in the audio files. Defaults to "en".
+        """
+
         assert result_filepath.endswith(".txt"), "Specify the path to the recording file in .txt format."
 
         self.meta = read_metadata(metadata_path)
@@ -83,6 +120,16 @@ class NoiseDetector:
                                        "WHISPER_SPEECH"])
 
     def read_audio(self, audio_path: str, target_sr: int = 16000) -> np.ndarray:
+        """
+        Reads an audio file and resamples it to the target sample rate if necessary.
+
+        Args:
+            audio_path (str): Path to the audio file.
+            target_sr (int, optional): Target sample rate. Defaults to 16000.
+
+        Returns:
+            tuple: Sample rate and the audio signal as a numpy array.
+        """
         sr, signal = scipy.io.wavfile.read(audio_path, mmap=False)
 
         if sr != target_sr:
@@ -98,6 +145,16 @@ class NoiseDetector:
         return sr, signal.astype(np.int16)
     
     def calculate_nisqa(self, signal: np.ndarray, sr: int) -> np.ndarray[float]:
+        """
+        Calculates NISQA (speech quality) scores for the given audio signal.
+
+        Args:
+            signal (np.ndarray): The audio signal.
+            sr (int): Sample rate of the audio signal.
+
+        Returns:
+            np.ndarray: Array containing NISQA quality scores.
+        """
         framesize = sr * 2
         signal = torch.as_tensor(signal)
         h0, c0 = self.h0.clone(), self.c0.clone()
@@ -116,6 +173,17 @@ class NoiseDetector:
         return avg_out
 
     def check_annotation(self, path_to_audio: str, target_text: str, cer_th: float = 0.1) -> bool:
+        """
+        Checks the correctness of the annotation by comparing the predicted and target transcriptions.
+
+        Args:
+            path_to_audio (str): Path to the audio file.
+            target_text (str): The target text annotation.
+            cer_th (float, optional): CER (Character Error Rate) threshold for correctness. Defaults to 0.1.
+
+        Returns:
+            bool: True if the annotation is correct, False otherwise.
+        """
         pred_text = self.asr.transcribe(paths2audio_files=[path_to_audio], verbose=False)[0][0]
         target_text = remove_punctuation(target_text)
 
@@ -128,16 +196,40 @@ class NoiseDetector:
         return True
 
     def check_speech(self, signal: np.ndarray) -> bool:
+        """
+        Checks if speech is present in the audio signal using VAD (Voice Activity Detection).
+
+        Args:
+            signal (np.ndarray): The audio signal.
+
+        Returns:
+            bool: True if speech is detected, False otherwise.
+        """
         timestamps = get_speech_timestamps(signal, self.vad)
         if len(timestamps):
             return True
         return False
 
     def check_language(self, text: str) -> bool:
+        """
+        Detects the language of the given text and checks if it matches the expected language.
+
+        Args:
+            text (str): The text to be checked.
+
+        Returns:
+            bool: True if the detected language matches the expected language, False otherwise.
+        """
         detected_lang = lang_detector(text)
         return detected_lang == self.lang
     
     def save_dataframe(self, save_path: str) -> None:
+        """
+        Saves the processed results as a CSV file.
+
+        Args:
+            save_path (str): Path to save the CSV file.
+        """
         file_ids = [path.split("/")[-1].split(".")[0] for path in glob(os.path.join(self.wavs_path, "*.wav"))]
         num_files = len(file_ids)
         dataframe = {"file_id": file_ids}
@@ -163,11 +255,22 @@ class NoiseDetector:
         self,
         make_dataframe: bool = True,
         quality_th: float = 1.2,
-        noiseness_th: float = 2.,
-        coloration_th: float = 2.,
+        noiseness_th: float = 2.0,
+        coloration_th: float = 2.0,
         discontinuity_th: float = 1.5,
-        loundness_th: float = 1.
+        loundness_th: float = 1.0
     ) -> None:
+        """
+        Processes all audio files in the specified directory, applying various checks based on the provided configurations.
+
+        Args:
+            make_dataframe (bool, optional): Whether to generate a dataframe of results. Defaults to True.
+            quality_th (float, optional): Threshold for NISQA quality score. Defaults to 1.2.
+            noiseness_th (float, optional): Threshold for NISQA noiseness score. Defaults to 2.0.
+            coloration_th (float, optional): Threshold for NISQA coloration score. Defaults to 2.0.
+            discontinuity_th (float, optional): Threshold for NISQA discontinuity score. Defaults to 1.5.
+            loundness_th (float, optional): Threshold for NISQA loudness score. Defaults to 1.0.
+        """
 
         for audio_path in tqdm(glob(os.path.join(self.wavs_path, "*.wav"))):
             TAGS = []
